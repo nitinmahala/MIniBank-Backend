@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fraud Detection System</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body class="bg-dark text-light">
+<div class="container mt-5">
+  <h2 class="text-center mb-4">💳 Fraud Transaction Detection</h2>
+
+  <!-- CSV Upload Form -->
+  <form id="uploadForm" enctype="multipart/form-data" class="p-4 bg-secondary rounded">
+    <div class="mb-3">
+      <label for="file" class="form-label">Upload Transaction CSV File</label>
+      <input type="file" id="file" name="file" class="form-control" accept=".csv" required>
+    </div>
+    <button type="submit" class="btn btn-warning w-100">🔍 Predict Fraudulent Transactions</button>
+  </form>
+
+  <hr class="my-4 text-light">
+
+  <!-- Results Section -->
+  <div id="results" class="mt-4"></div>
+</div>
+
+<script>
+document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const fileInput = document.getElementById('file');
+  if (!fileInput.files.length) {
+    alert("Please upload a CSV file.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('file', fileInput.files[0]);
+
+  const response = await fetch('/predict', {
+    method: 'POST',
+    body: formData
+  });
+
+  const data = await response.json();
+
+  const resultsDiv = document.getElementById('results');
+  resultsDiv.innerHTML = "";
+
+  if (response.ok) {
+    let tableHTML = `
+      <table class="table table-bordered table-striped table-dark mt-3">
+        <thead><tr>
+          <th>#</th><th>Prediction</th><th>Explanation</th>
+        </tr></thead><tbody>
+    `;
+    data.forEach(row => {
+      const color = row.label === "Fraudulent" ? "text-danger fw-bold" : "text-success fw-bold";
+      tableHTML += `
+        <tr>
+          <td>${row.index}</td>
+          <td class="${color}">${row.label}</td>
+          <td>${row.reason}</td>
+        </tr>
+      `;
+    });
+    tableHTML += "</tbody></table>";
+    resultsDiv.innerHTML = tableHTML;
+  } else {
+    resultsDiv.innerHTML = `<div class="alert alert-danger">Error: ${data.error}</div>`;
+  }
+});
+</script>
+</body>
+</html>
